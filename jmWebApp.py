@@ -18,7 +18,7 @@ def get_parameter(name, with_decryption=False):
 # Fetching parameters
 db_host = get_parameter('/JMPYAPP/DB/DB-ENDPOINT')
 db_user = get_parameter('/JMPYAPP/DB/DB-USER')
-db_password = get_parameter('/JMPYAPP/DB/DB-PASS', with_decryption=True)  # Assuming this is encrypted
+db_password = get_parameter('/JMPYAPP/DB/DB-PASS', with_decryption=True)
 db_name = get_parameter('/JMPYAPP/DB/DB-NAME')
 
 # Database connection function
@@ -44,5 +44,6 @@ def lookup():
     return jsonify({'response': row['full_name'] if row else 'Not found'})
 
 
+# host = 0.0.0.0 for public availability.
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
