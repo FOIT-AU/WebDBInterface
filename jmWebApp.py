@@ -43,6 +43,22 @@ def lookup():
     conn.close()
     return jsonify({'response': row['full_name'] if row else 'Not found'})
 
+@app.route('/insert', methods=['POST'])
+def insert():
+    data = request.get_json()
+    serial_number = data.get('serial_number')
+    sim_number = data.get('sim_number')
+
+    if not serial_number or not sim_number:
+        return jsonify({'response': 'Serial number or SIM number is missing'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('UPDATE machines_table SET sim_number = %s WHERE serial_number = %s', (sim_number, serial_number))
+    conn.commit()
+    conn.close()
+    return jsonify({'response': 'SIM number inserted successfully'})
+
 
 # host = 0.0.0.0 for public availability.
 if __name__ == '__main__':
