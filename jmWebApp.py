@@ -59,6 +59,35 @@ def insert():
     conn.close()
     return jsonify({'response': 'SIM number inserted successfully'})
 
+# Define a route for CSV file upload
+@app.route('/upload_csv', methods=['POST'])
+def upload_csv():
+    if 'file' not in request.files:
+        return jsonify({'response': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'response': 'No selected file'}), 400
+    if file:
+        filename = secure_filename(file.filename)
+
+        # Open the CSV file and insert data into the database
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        csv_file = csv.reader(file.stream)
+        next(csv_file)  # Skip the header row if your CSV has one
+        for row in csv_file:
+            # Assuming the CSV columns are in the order: serial_number, full_name, sim_number
+            cursor.execute(
+                'INSERT INTO machines_table (serial_number, full_name, sim_number) VALUES (%s, %s, %s)',
+                (row[0], row[1], row[2])
+            )
+        
+        conn.commit()
+        conn.close()
+
+        return jsonify({'response': 'CSV data uploaded successfully'})
+
 
 # host = 0.0.0.0 for public availability.
 if __name__ == '__main__':
