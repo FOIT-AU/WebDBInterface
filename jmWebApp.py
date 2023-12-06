@@ -1,7 +1,11 @@
 from flask import Flask, request, jsonify
 import mysql.connector
+import io
 import os
+import tempfile
 import boto3
+from werkzeug.utils import secure_filename
+import csv
 
 app = Flask(__name__)
 
@@ -59,7 +63,7 @@ def insert():
     conn.close()
     return jsonify({'response': 'SIM number inserted successfully'})
 
-# Define a route for CSV file upload
+
 @app.route('/upload_csv', methods=['POST'])
 def upload_csv():
     if 'file' not in request.files:
@@ -67,26 +71,38 @@ def upload_csv():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'response': 'No selected file'}), 400
+    
     if file:
-        filename = secure_filename(file.filename)
+        # Save the file temporarily
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, secure_filename(file.filename))
+        file.save(temp_path)
 
-        # Open the CSV file and insert data into the database
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        # Open the file and process it
+        with open(temp_path, mode='r', encoding='utf-8') as csv_file:
+            csv_reader = csv.reader(csv_file)
+            next(csv_reader)  # Skip the header row
 
-        csv_file = csv.reader(file.stream)
-        next(csv_file)  # Skip the header row if your CSV has one
-        for row in csv_file:
-            # Assuming the CSV columns are in the order: serial_number, full_name, sim_number
-            cursor.execute(
-                'INSERT INTO machines_table (serial_number, full_name, sim_number) VALUES (%s, %s, %s)',
-                (row[0], row[1], row[2])
-            )
-        
-        conn.commit()
-        conn.close()
+            conn = get_db_connection()
+            cursor = conn.cursor()
+
+            for row in csv_reader:
+                cursor.execute(
+                    'INSERT INTO machines_table (serial_number, full_name, sim_number) VALUES (%s, %s, %s)',
+                    (row[0], row[1], row[2])
+                )
+
+            conn.commit()
+            conn.close()
+
+        # Clean up: remove the temporary file and directory
+        os.remove(temp_path)
+        os.rmdir(temp_dir)
 
         return jsonify({'response': 'CSV data uploaded successfully'})
+
+
+
 
 
 # host = 0.0.0.0 for public availability.
