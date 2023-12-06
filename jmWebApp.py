@@ -6,8 +6,10 @@ import tempfile
 import boto3
 from werkzeug.utils import secure_filename
 import csv
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 # Create a session using credentials from the environment
@@ -102,6 +104,14 @@ def upload_csv():
         return jsonify({'response': 'CSV data uploaded successfully'})
 
 
+@app.route('/get_all_data', methods=['GET'])
+def get_all_data():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute('SELECT * FROM machines_table')  # Adjust the query as needed
+    rows = cursor.fetchall()
+    conn.close()
+    return jsonify(rows)
 
 
 
