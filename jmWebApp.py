@@ -26,6 +26,7 @@ db_host = get_parameter('/JMPYAPP/DB/DB-ENDPOINT')
 db_user = get_parameter('/JMPYAPP/DB/DB-USER')
 db_password = get_parameter('/JMPYAPP/DB/DB-PASS', with_decryption=True)
 db_name = get_parameter('/JMPYAPP/DB/DB-NAME')
+db_apitoken = get_parameter('/JMPYAPP/DB/DB-APITOKEN', with_decryption=True)
 
 # Database connection function
 def get_db_connection():
@@ -113,6 +114,25 @@ def get_all_data():
     conn.close()
     return jsonify(rows)
 
+@app.route('/export_csv', methods=['GET'])
+def export_csv():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM machines_table")  # Adjust query as needed
+
+    si = StringIO()
+    cw = csv.writer(si)
+    cw.writerow([i[0] for i in cursor.description])  # write headers
+    cw.writerows(cursor.fetchall())  # write data rows
+
+    conn.close()
+    output = si.getvalue()
+    si.close()
+
+    return output, 200, {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename=export.csv'
+    }
 
 
 # host = 0.0.0.0 for public availability.

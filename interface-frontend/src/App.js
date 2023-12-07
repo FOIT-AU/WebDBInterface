@@ -60,22 +60,45 @@ function App() {
   for (let i = 1; i <= totalPages; i++) {
       pageNumbers.push(i);
   }
-  
+  const [apiKey, setApiKey] = useState('');
+  const clearDatabase = async () => {
+    if (window.confirm("Are you sure you want to clear the database? This action cannot be undone.")) {
+        try {
+            const response = await fetch('http://54.235.235.103:5000/clear_database', {
+                method: 'POST',
+                headers: {
+                    'Authorization': apiKey  // Use the API key from the state
+                }
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+                setDatabaseData([]); // Clear the local state holding the database data
+                alert(data.response);
+            } else {
+                throw new Error(data.error || 'Failed to clear the database');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to clear the database: ' + error.message);
+        }
+    }
+};
+
+
+
   return (
     <Router>  
       <div className="App">
       <nav className="navbar navbar-expand-lg navbar-light bg-light">
-          <Link className="navbar-brand" to="#">DB Interface</Link>
+          <Link className="navbar-brand" to="/">DB Interface</Link>
           <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
           </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav">
-              <li className="nav-item active">
-                <Link className="nav-link" to="#">Serial Number Lookup <span className="sr-only">(current)</span></Link>
-              </li>
               <li className="nav-item">
-                <Link className="nav-link" to="/upload-csv">CSV Upload</Link>
+                <Link className="nav-link" to="/upload-csv">CSV Upload/Download</Link>
               </li>
               {/* Add more navbar items here if needed */}
             </ul>
@@ -134,19 +157,44 @@ function App() {
                       </ul>
                   </nav>
               </div>
-              {/* Serial Number Lookup Form */}
-              <form onSubmit={handleSerialNumberSubmit}>
-                <input 
-                    type="text" 
-                    value={serialNumber} 
-                    onChange={(e) => setSerialNumber(e.target.value)}
-                    placeholder="Enter Serial Number"
-                />
-                <button type="submit">Lookup</button>
-              </form>
+              
+              <div className="container my-5">
+                <div className="card">
+                    <div className="card-body">
+                        <div className="mb-3">
+                            <input 
+                                type="text" 
+                                className="form-control" 
+                                value={apiKey} 
+                                onChange={(e) => setApiKey(e.target.value)}
+                                placeholder="Enter API Key"
+                            />
+                        </div>
+                        <button className="btn btn-danger" onClick={clearDatabase}>Clear Database</button>
+                    </div>
+                </div>
+              </div>
 
-              {/* Response Message */}
-              {responseMessage && <p>{responseMessage}</p>}
+              <div className="container my-5">
+                <div className="card">
+                    <div className="card-body">
+                        <form onSubmit={handleSerialNumberSubmit} className="mb-3">
+                            <div className="input-group">
+                                <input 
+                                    type="text" 
+                                    className="form-control" 
+                                    value={serialNumber} 
+                                    onChange={(e) => setSerialNumber(e.target.value)}
+                                    placeholder="Enter Serial Number"
+                                />
+                                <button type="submit" className="btn btn-primary">Lookup</button>
+                            </div>
+                        </form>
+                        {/* Response Message */}
+                        {responseMessage && <p>{responseMessage}</p>}
+                    </div>
+                </div>
+              </div>
               </>
         } />
       </Routes>
