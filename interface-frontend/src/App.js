@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import CsvUpload from './CsvUpload';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-
+import config from './config';
 
 function App() {
   const [serialNumber, setSerialNumber] = useState('');
@@ -14,7 +14,7 @@ function App() {
   const handleSerialNumberSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch(`http://54.235.235.103:5000/lookup?serial_number=${serialNumber}`);
+        const response = await fetch(`${config.API_BASE_URL}/lookup?serial_number=${serialNumber}`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -39,7 +39,7 @@ function App() {
 
   const fetchDatabaseData = async () => {
     try {
-        const response = await fetch('http://54.235.235.103:5000/get_all_data');
+        const response = await fetch(`${config.API_BASE_URL}/get_all_data`);
         if (!response.ok) {
             throw new Error('Network response was not ok');
         }
@@ -64,7 +64,7 @@ function App() {
   const clearDatabase = async () => {
     if (window.confirm("Are you sure you want to clear the database? This action cannot be undone.")) {
         try {
-            const response = await fetch('http://54.235.235.103:5000/clear_database', {
+            const response = await fetch(`${config.API_BASE_URL}/clear_database`, {
                 method: 'POST',
                 headers: {
                     'Authorization': apiKey  // Use the API key from the state
@@ -118,6 +118,8 @@ function App() {
                             <th>Serial Number</th>
                             <th>Full Name</th>
                             <th>SIM Number</th>
+                            <th>State</th>
+                            <th>School</th>
                             {/* Add other columns as necessary */}
                         </tr>
                     </thead>
@@ -127,6 +129,8 @@ function App() {
                                 <td>{row.serial_number}</td>
                                 <td>{row.full_name}</td>
                                 <td>{row.sim_number}</td>
+                                <td>{row.state}</td>
+                                <td>{row.school}</td>
                                 {/* Render other fields as necessary */}
                             </tr>
                         ))}
