@@ -1,6 +1,7 @@
 // CsvUpload.js
 import React, { useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import config from './config';
 
 function CsvUpload() {
     const [csvFile, setCsvFile] = useState(null);
@@ -9,24 +10,37 @@ function CsvUpload() {
     const handleCsvUpload = async (e) => {
         e.preventDefault();
         if (!csvFile) {
-            alert('Please select a CSV file to upload');
+            setResponseMessage('Please select a CSV file to upload');
             return;
         }
         const formData = new FormData();
         formData.append('file', csvFile);
-
-        // Backend URL
-        const response = await fetch('http://54.235.235.103:5000/upload_csv', {
-            method: 'POST',
-            body: formData
-        });
-        const data = await response.json();
-        setResponseMessage(data.response);
+    
+        try {
+            const response = await fetch(`${config.API_BASE_URL}/upload_csv`, {
+                method: 'POST',
+                body: formData
+            });
+    
+            const data = await response.json();
+            
+            if (response.ok) {
+                setResponseMessage(data.response || 'CSV uploaded successfully.');
+            } else {
+                // Handle server-side errors (e.g., validation errors, server issues)
+                setResponseMessage(data.error || 'Failed to upload CSV. Please check the file format and try again.');
+            }
+        } catch (error) {
+            // Handle network errors or issues with the fetch request
+            console.error('Upload Error:', error);
+            setResponseMessage('An error occurred while uploading: ' + error.message);
+        }
     };
+    
 
     const downloadCsv = async () => {
         try {
-            const response = await fetch('http://54.235.235.103:5000/export_csv');
+            const response = await fetch(`${config.API_BASE_URL}/export_csv`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -53,9 +67,10 @@ function CsvUpload() {
             <h5 className="card-title">CSV Formatting Requirements</h5>
             <p className="card-text">
                 Ensure your CSV file adheres to the following format:<br/>
-                - Column 1: Serial Number<br/>
-                - Column 2: Full Name<br/>
-                - Column 3: SIM Number<br/>
+                - Column 1: First Name<br/>
+                - Column 2: Last Name<br/>
+                - Column 3: State<br/>
+                - Column 4: School<br/>
                 The first row should contain headers.
             </p>
         </div>
@@ -74,7 +89,6 @@ function CsvUpload() {
             </div>
             <button type="submit" className="btn btn-primary mb-3">Upload CSV</button>
         </form>
-    
         {responseMessage && <p className="alert alert-info">{responseMessage}</p>}
     </div>
     <div className="container text-center mb-4">
