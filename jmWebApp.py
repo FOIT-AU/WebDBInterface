@@ -50,6 +50,46 @@ def lookup():
     conn.close()
     return jsonify({'response': row['full_name'] if row else 'Not found'})
 
+@app.route('/retrieve_student', methods=['GET'])
+def retrieve_studnet():
+    key = request.args.get('serial_number')
+    if not key:
+        return jsonify({'response': 'Serial number is missing'}), 400
+
+    conn = get_db_connection()
+    try:
+        # Start transaction
+        conn.start_transaction()
+
+        # Select the next record with a blank or NULL serial_number
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            'SELECT id, full_name FROM machines_table WHERE serial_number IS NULL OR serial_number = "" ORDER BY state, school, last_name LIMIT 1 FOR UPDATE'
+        )
+        row = cursor.fetchone()
+
+        if row:
+            # Update the record with the provided serial_number
+            update_cursor = conn.cursor()
+            update_cursor.execute(
+                'UPDATE machines_table SET serial_number = %s WHERE id = %s',
+                (key, row['id'])
+            )
+            conn.commit()
+
+            return jsonify({'response': row['full_name']})
+        else:
+            conn.commit()
+            return jsonify({'response': 'No available record found'})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        conn.close()
+
+
 @app.route('/insert', methods=['POST'])
 def insert():
     data = request.get_json()
@@ -74,8 +114,8 @@ def upload_csv():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'response': 'No selected file'}), 400
-    
-    if file:
+
+    try:
         # Save the file temporarily
         temp_dir = tempfile.mkdtemp()
         temp_path = os.path.join(temp_dir, secure_filename(file.filename))
@@ -90,19 +130,36 @@ def upload_csv():
             cursor = conn.cursor()
 
             for row in csv_reader:
+                # Check if the row has the expected number of columns (4 in this case)
+                if len(row) != 4:
+                    raise ValueError("Incorrect number of columns in row.")
+
+                full_name = f"{row[0]} {row[1]}"  # Concatenating first_name and last_name
+                first_name = row[0]
+                last_name = row[1]
+                state = row[2]
+                school = row[3]
+
                 cursor.execute(
-                    'INSERT INTO machines_table (serial_number, full_name, sim_number) VALUES (%s, %s, %s)',
-                    (row[0], row[1], row[2])
+                    'INSERT INTO machines_table (full_name, first_name, last_name, state, school) VALUES (%s, %s, %s, %s, %s)',
+                    (full_name, first_name, last_name, state, school)
                 )
 
             conn.commit()
-            conn.close()
 
+        return jsonify({'response': 'CSV data uploaded successfully'})
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        if conn:
+            conn.close()
         # Clean up: remove the temporary file and directory
         os.remove(temp_path)
         os.rmdir(temp_dir)
 
-        return jsonify({'response': 'CSV data uploaded successfully'})
 
 
 @app.route('/get_all_data', methods=['GET'])
@@ -133,6 +190,24 @@ def export_csv():
         'Content-Type': 'text/csv',
         'Content-Disposition': 'attachment; filename=export.csv'
     }
+
+@app.route('/clear_database', methods=['POST'])
+def clear_database():
+    api_token = request.headers.get('Authorization')
+    correct_token = db_apitoken  # Store this securely
+
+    if api_token != correct_token:
+        return jsonify({'error': 'Unauthorized'}), 403
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM machines_table")  
+        conn.commit()
+        conn.close()
+        return jsonify({'response': 'Database cleared successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 
 # host = 0.0.0.0 for public availability.
