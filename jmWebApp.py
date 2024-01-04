@@ -51,7 +51,7 @@ def lookup():
     return jsonify({'response': row['full_name'] if row else 'Not found'})
 
 @app.route('/retrieve_student', methods=['GET'])
-def retrieve_studnet():
+def retrieve_student():
     key = request.args.get('serial_number')
     if not key:
         return jsonify({'response': 'Serial number is missing'}), 400
@@ -61,7 +61,19 @@ def retrieve_studnet():
         # Start transaction
         conn.start_transaction()
 
-        # Select the next record with a blank or NULL serial_number
+        # Check if a record with the provided serial_number already exists
+        check_cursor = conn.cursor(dictionary=True)
+        check_cursor.execute(
+            'SELECT full_name FROM machines_table WHERE serial_number = %s', (key,)
+        )
+        existing_row = check_cursor.fetchone()
+
+        if existing_row:
+            # If the record exists, return the full_name without updating
+            conn.commit()
+            return jsonify({'response': existing_row['full_name']})
+
+        # If the record does not exist, proceed to find and update a record
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
             'SELECT id, full_name FROM machines_table WHERE serial_number IS NULL OR serial_number = "" ORDER BY state, school, last_name LIMIT 1 FOR UPDATE'
