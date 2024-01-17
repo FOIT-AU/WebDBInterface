@@ -185,23 +185,32 @@ def get_all_data():
 
 @app.route('/export_csv', methods=['GET'])
 def export_csv():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM machines_table")  # Adjust query as needed
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    si = StringIO()
-    cw = csv.writer(si)
-    cw.writerow([i[0] for i in cursor.description])  # write headers
-    cw.writerows(cursor.fetchall())  # write data rows
+        cursor.execute("SELECT * FROM machines_table")  # Adjust query as needed
 
-    conn.close()
+        si = StringIO()
+        cw = csv.writer(si)
+        cw.writerow([i[0] for i in cursor.description])  # write headers
+        cw.writerows(cursor.fetchall())  # write data rows
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+    finally:
+        cursor.close()
+        conn.close()
+
     output = si.getvalue()
     si.close()
 
-    return output, 200, {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename=export.csv'
-    }
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-disposition": "attachment; filename=export.csv"}
+    )
 
 @app.route('/clear_database', methods=['POST'])
 def clear_database():
