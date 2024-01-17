@@ -187,14 +187,13 @@ def get_all_data():
 def export_csv():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM machines_table")  # Adjust query as needed
+        cursor = conn.cursor(dictionary=True, buffered=False)  # Unbuffered cursor
+        cursor.execute("SELECT * FROM machines_table")
 
         si = StringIO()
         cw = csv.writer(si)
-        cw.writerow([i[0] for i in cursor.description])  # write headers
-        cw.writerows(cursor.fetchall())  # write data rows
+        cw.writerow([i[0] for i in cursor.description])
+        cw.writerows(cursor.fetchall())
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -211,6 +210,7 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=export.csv"}
     )
+
 
 @app.route('/clear_database', methods=['POST'])
 def clear_database():
