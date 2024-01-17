@@ -1,3 +1,4 @@
+from requests import Response
 from flask import Flask, request, jsonify
 import mysql.connector
 import io
@@ -180,6 +181,7 @@ def get_all_data():
     cursor = conn.cursor(dictionary=True)
     cursor.execute('SELECT * FROM machines_table')  # Adjust the query as needed
     rows = cursor.fetchall()
+    cursor.close()
     conn.close()
     return jsonify(rows)
 
@@ -187,13 +189,16 @@ def get_all_data():
 def export_csv():
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True, buffered=False)  # Unbuffered cursor
-        cursor.execute("SELECT * FROM machines_table")
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        cursor.execute('SELECT * FROM machines_table')
 
         si = StringIO()
         cw = csv.writer(si)
-        cw.writerow([i[0] for i in cursor.description])
-        cw.writerows(cursor.fetchall())
+        cw.writerow([i[0] for i in cursor.description])  # write headers
+
+        # Fetch and write each row to avoid leaving unread results
+        for row in cursor:
+            cw.writerow(row.values())
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -210,6 +215,7 @@ def export_csv():
         mimetype="text/csv",
         headers={"Content-disposition": "attachment; filename=export.csv"}
     )
+
 
 
 @app.route('/clear_database', methods=['POST'])
