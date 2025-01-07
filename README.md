@@ -2,6 +2,9 @@
 
 A Python-based web application leveraging the Flask framework to interact with a MySQL database and AWS services. This application enables efficient management of a database containing usernames, serial numbers, and related data via various RESTful APIs. It provides endpoints for retrieving, updating, uploading, and exporting data.
 
+### Note
+I haven't had the time yet to fully make all variable names as agnostic as they could be.
+
 ---
 
 ## Features
