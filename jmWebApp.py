@@ -13,21 +13,30 @@ app = Flask(__name__)
 CORS(app)
 
 
-# Create a session using credentials from the environment
-session = boto3.session.Session(region_name='us-east-1')
-ssm = session.client('ssm')
+# DB Structure:
+# machines_table
+	
+	# id int NOT NULL AUTO_INCREMENT,
+	# first_name varchar(255),
+	# last_name varchar(255),
+	# full_name varchar(255),
+	# username varchar(255),
+	# state varchar(255),
+	# school varchar(255),
+	# serial_number varchar(255),
+	# sim_number varchar(255),
+	# email varchar(255),
+	# phone varchar(255),
+	# PRIMARY KEY (id)
 
-# Function to get parameter
-def get_parameter(name, with_decryption=False):
-    response = ssm.get_parameter(Name=name, WithDecryption=with_decryption)
-    return response['Parameter']['Value']
 
-# Fetching parameters
-db_host = get_parameter('/JMPYAPP/DB/DB-ENDPOINT')
-db_user = get_parameter('/JMPYAPP/DB/DB-USER')
-db_password = get_parameter('/JMPYAPP/DB/DB-PASS', with_decryption=True)
-db_name = get_parameter('/JMPYAPP/DB/DB-NAME')
-db_apitoken = get_parameter('/JMPYAPP/DB/DB-APITOKEN', with_decryption=True)
+
+# Hardcoding parameters because I am a menance
+db_host = TODO
+db_user = TODO
+db_password = TODO
+db_name = TODO
+db_apitoken = TODO
 
 # Database connection function
 def get_db_connection():
@@ -152,10 +161,12 @@ def upload_csv():
                 last_name = row[1]
                 state = row[2]
                 school = row[3]
-
+                email = row[4]
+                phone = row[5]
+                
                 cursor.execute(
-                    'INSERT INTO machines_table (full_name, first_name, last_name, state, school) VALUES (%s, %s, %s, %s, %s)',
-                    (full_name, first_name, last_name, state, school)
+                    'INSERT INTO machines_table (full_name, first_name, last_name, state, school, email, phone) VALUES (%s, %s, %s, %s, %s)',
+                    (full_name, first_name, last_name, state, school, email, phone)
                 )
 
             conn.commit()
