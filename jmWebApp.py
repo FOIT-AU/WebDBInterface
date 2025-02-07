@@ -159,13 +159,21 @@ def upload_csv():
                 full_name = f"{row[0]} {row[1]}"  # Concatenating first_name and last_name
                 first_name = row[0]
                 last_name = row[1]
+		if  len(first_name) > 20:
+		    username = first_name[:20]
+		elif len(full_name) > 20:
+		    username = first_name
+		else:
+		    username = full_name
+		
+		username = 
                 state = row[2]
                 school = row[3]
                 email = row[4]
                 phone = row[5]
                 
                 cursor.execute(
-                    'INSERT INTO machines_table (full_name, first_name, last_name, state, school, email, phone) VALUES (%s, %s, %s, %s, %s)',
+                    'INSERT INTO machines_table (full_name, first_name, last_name, username, state, school, email, phone) VALUES (%s, %s, %s, %s, %s)',
                     (full_name, first_name, last_name, state, school, email, phone)
                 )
 
