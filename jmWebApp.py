@@ -81,7 +81,7 @@ def retrieve_student():
         if existing_row:
             # If the record exists, return the full_name without updating
             conn.commit()
-            return jsonify({'response': existing_row['full_name']})
+            return jsonify({'response': existing_row['username']})
 
         # If the record does not exist, proceed to find and update a record
         cursor = conn.cursor(dictionary=True)
@@ -99,10 +99,10 @@ def retrieve_student():
             )
             conn.commit()
 
-            return jsonify({'response': row['full_name']})
+            return jsonify({'response': row['username']})
         else:
             conn.commit()
-            return jsonify({'response': 'No available record found'})
+            return jsonify({'response': ''})
 
     except Exception as e:
         conn.rollback()
