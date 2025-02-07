@@ -166,7 +166,6 @@ def upload_csv():
 		else:
 		    username = full_name
 		
-		username = 
                 state = row[2]
                 school = row[3]
                 email = row[4]
@@ -174,7 +173,7 @@ def upload_csv():
                 
                 cursor.execute(
                     'INSERT INTO machines_table (full_name, first_name, last_name, username, state, school, email, phone) VALUES (%s, %s, %s, %s, %s)',
-                    (full_name, first_name, last_name, state, school, email, phone)
+                    (full_name, first_name, last_name, username, state, school, email, phone)
                 )
 
             conn.commit()
